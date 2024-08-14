@@ -1,0 +1,55 @@
+#include <WiFi.h>
+#include <FirebaseESP32.h>
+
+#define WIFI_SSID "Galaxy S24 ULTRA" 
+#define WIFI_PASSWORD "GEOcarri99"
+
+#define FIREBASE_HOST "strong-box2-default-rtdb.firebaseio.com"
+#define FIREBASE_AUTH "AIzaSyCTIcAxkiZgDfiEoKoWcIMx5AcSaIyJqoI"
+
+#define BOTON_PIN 12   // Pin donde estará conectado el botón
+#define CERRADURA_PIN 13 // Pin donde estará conectada la cerradura
+
+FirebaseData firebaseData;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(BOTON_PIN, INPUT_PULLUP);
+  pinMode(CERRADURA_PIN, OUTPUT);
+  digitalWrite(CERRADURA_PIN, HIGH);
+
+  // Conectar a la red WiFi
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Conectando a WiFi...");
+  }
+  Serial.println("Conectado a WiFi");
+
+  // Conectar a Firebase
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.reconnectWiFi(true);
+}
+
+void loop() {
+  // Leer el estado del botón
+  if (digitalRead(BOTON_PIN) == LOW) {
+    abrirCerradura();
+    Firebase.setString(firebaseData, "/cerradura", "abierta");
+  }
+
+  // Escuchar comandos del Arduino Uno
+  if (Serial.available()) {
+    String command = Serial.readString();
+    if (command == "abrir") {
+      abrirCerradura();
+    }
+  }
+}
+
+void abrirCerradura() {
+  Serial.println("Abriendo cerradura...");
+  digitalWrite(CERRADURA_PIN, LOW);
+  delay(2000);
+  digitalWrite(CERRADURA_PIN, HIGH);
+}
